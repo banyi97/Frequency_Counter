@@ -1,0 +1,11 @@
+main.c:90:5:main	16	static
+main.c:143:6:SystemClock_Config	88	static
+main.c:188:13:MX_USART2_UART_Init	8	static
+main.c:221:13:MX_GPIO_Init	48	static
+main.c:295:6:HAL_GPIO_EXTI_Callback	16	static
+main.c:319:13:DisplayOE_TIM_Config	4	static
+main.c:323:6:HAL_TIM_PeriodElapsedCallback	48	static
+main.c:339:13:SeftSquareSignalGenerator	16	static
+main.c:355:13:ClockCounter	16	static
+main.c:371:13:PrintFreq	24	static
+main.c:407:6:Error_Handler	4	static

@@ -1,0 +1,14 @@
+Project Outputs Generation Report
+---------------------------------
+Start Output Generation At 1:29:44 AM On 3/9/2020
+
+Output: Bill of Materials
+Type  : BOM
+From  : Project [MLAB_Hazi.PrjPcb]
+   Generated File[MLAB_Hazi.xlsx]
+
+
+Files Generated   : 1
+Documents Printed : 0
+
+Finished Output Generation At 1:29:47 AM On 3/9/2020
