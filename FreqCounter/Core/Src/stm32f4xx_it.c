@@ -44,6 +44,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 extern TIM_HandleTypeDef htim_gen;
+extern TIM_HandleTypeDef htim_prell;
 extern TIM_HandleTypeDef htim_clockCntr;
 /* USER CODE END PV */
 
@@ -213,10 +214,29 @@ void EXTI0_IRQHandler(void)
   /* USER CODE END EXTI0_IRQn 1 */
 }
 
+/**
+  * @brief This function handles EXTI line[15:10] interrupts.
+  */
+void EXTI15_10_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI15_10_IRQn 0 */
+
+  /* USER CODE END EXTI15_10_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+  /* USER CODE BEGIN EXTI15_10_IRQn 1 */
+
+  /* USER CODE END EXTI15_10_IRQn 1 */
+}
+
 /* USER CODE BEGIN 1 */
 void TIM2_IRQHandler(void)
 {
 	HAL_TIM_IRQHandler(&htim_clockCntr);
+}
+void TIM3_IRQHandler(void)
+{
+	HAL_TIM_IRQHandler(&htim_prell);
 }
 void TIM4_IRQHandler(void)
 {

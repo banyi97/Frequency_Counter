@@ -46,6 +46,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 TIM_HandleTypeDef htim_gen;
 TIM_HandleTypeDef htim_clockCntr;
+TIM_HandleTypeDef htim_prell;
 
 uint16_t sevenSegNumbers[] = {
 		0x5446,
@@ -64,7 +65,7 @@ uint8_t mode = Freq;
 uint32_t isPrint = 0;
 uint32_t clockCntr = 0;
 uint32_t printCntr = 0;
-uint16_t sevenSegMask = 0x8ba9;
+uint16_t sevenSegMask = 0x7456;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -75,7 +76,9 @@ static void MX_USART2_UART_Init(void);
 static void DisplayOE_TIM_Config(void);
 static void SeftSquareSignalGenerator(void);
 static void ClockCounter(void);
-static void PrintFreq(uint32_t);
+static void ButtonPrellTimer(void);
+static void PrintFreq(uint32_t, uint8_t);
+static void CalcFreq(uint32_t);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -116,6 +119,7 @@ int main(void)
   char* mess = "Start\r\n";
   HAL_UART_Transmit(&huart2, mess, 7, 5000);
    //DisplayOE_TIM_Config();
+  ButtonPrellTimer();
   SeftSquareSignalGenerator();
   ClockCounter();
   /* USER CODE END 2 */
@@ -125,10 +129,7 @@ int main(void)
   while (1)
   {
 	  //PrintFreq(rand()%9999);
-	  if(isPrint){
-		  PrintFreq(printCntr);
-		  isPrint = 0;
-	  }
+	  CalcFreq(printCntr);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -285,9 +286,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(LE_1_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : button_Pin */
+  GPIO_InitStruct.Pin = button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(button_GPIO_Port, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
@@ -295,24 +305,11 @@ static void MX_GPIO_Init(void)
 void HAL_GPIO_EXTI_Callback(uint16_t gpio){
 	if(gpio == GPIO_PIN_0){
 		clockCntr++;
-		/*
-		HAL_TIM_Base_Stop_IT(&htim_clockCntr);
-		uint32_t cntr = TIM2->CNT;
-		TIM2->CNT &= 0;
-
-		char str[20];
-		sprintf(str, "%d\r\n", cntr);
-		HAL_UART_Transmit(&huart2, str, strlen(str), 5000);
-
-		if(cntr != 0){
-			char str2[40];
-			clockCntr = (uint32_t)(COUNTER_TIMER_FREQ / cntr) + 1;
-			sprintf(str2, "Frekv: %d Hz\r\n", clockCntr);
-			HAL_UART_Transmit(&huart2, str2, strlen(str2), 5000);
-		}
-
-		HAL_TIM_Base_Start_IT(&htim_clockCntr);
-		*/
+	}
+	if(gpio == GPIO_PIN_10){
+		HAL_TIM_Base_Stop_IT(&htim_prell);
+		TIM3->CNT &= 0;
+		HAL_TIM_Base_Start_IT(&htim_prell);
 	}
 }
 
@@ -325,11 +322,29 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef * htim)
 	if (htim->Instance == TIM2)
 	{
 		isPrint = 1;
+		//uint32_t res = (clockCntr + printCntr) / 2;
+		//if(clockCntr != 0 && printCntr != 0){
+		//	res += 1;
+		//}
 		printCntr = clockCntr;
 		clockCntr = 0;
 		char str[30];
 		sprintf(str, "Freq: %d Hz\r\n", printCntr);
 		HAL_UART_Transmit(&huart2, str, strlen(str), 5000);
+	}
+	if (htim->Instance == TIM3)
+	{
+		HAL_TIM_Base_Stop_IT(&htim_prell);
+		if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_10) == GPIO_PIN_RESET){
+			char str[30] = "End of prell\r\n";
+			HAL_UART_Transmit(&huart2, str, strlen(str), 5000);
+			if(mode == Freq){
+				mode = Time;
+			}
+			else{
+				mode = Freq;
+			}
+		}
 	}
 	if (htim->Instance == TIM4)
 	{
@@ -337,12 +352,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef * htim)
 	}
 }
 static void SeftSquareSignalGenerator(){
-	__TIM4_CLK_ENABLE(); // 42Mhz
+	__TIM4_CLK_ENABLE(); // 42Mhz - 1Hz 661,0xFFFF - 2kHz 999,20
 	htim_gen.Instance = TIM4;
 	htim_gen.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim_gen.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim_gen.Init.Prescaler = 661;
-	htim_gen.Init.Period = 0xFFFF;
+	htim_gen.Init.Prescaler = 999;
+	htim_gen.Init.Period = 20;
 	htim_gen.State = HAL_TIM_STATE_RESET;
 
 	HAL_TIM_Base_Init(&htim_gen);
@@ -351,6 +366,20 @@ static void SeftSquareSignalGenerator(){
 	HAL_NVIC_EnableIRQ(TIM4_IRQn);
 
 	HAL_TIM_Base_Start_IT(&htim_gen);
+}
+static void ButtonPrellTimer(){
+	__TIM3_CLK_ENABLE(); // 42Mhz
+	htim_prell.Instance = TIM3;
+	htim_prell.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim_prell.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim_prell.Init.Prescaler = 120;
+	htim_prell.Init.Period = 0xFFFF;
+	htim_prell.State = HAL_TIM_STATE_RESET;
+
+	HAL_TIM_Base_Init(&htim_prell);
+
+	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 2);
+	HAL_NVIC_EnableIRQ(TIM3_IRQn);
 }
 static void ClockCounter(){
 	__TIM2_CLK_ENABLE(); //84Mhz
@@ -368,36 +397,74 @@ static void ClockCounter(){
 
 	HAL_TIM_Base_Start_IT(&htim_clockCntr);
 }
-static void PrintFreq(uint32_t freq){
+static void CalcFreq(uint32_t freq){
+	if(freq > 9999)
+			freq = 9999; // limit max freq - 4x7seg display
+		if(mode == Freq){
+			PrintFreq(freq, 0);
+		}
+		else{
+			if(freq != 0){
+				float periodeTime = ((float)1 / freq) * 1000; // ms
+				if(periodeTime >= 1000){
+					PrintFreq((uint32_t)periodeTime, 0);
+				}
+				else if(periodeTime >= 100){
+					periodeTime *= 10;
+					PrintFreq((uint32_t)periodeTime, 3);
+				}
+				else if(periodeTime >= 10){
+					periodeTime *= 100;
+					PrintFreq((uint32_t)periodeTime, 2);
+				}
+				else if(periodeTime >= 1){
+					periodeTime *= 1000;
+
+					PrintFreq((uint32_t)periodeTime, 1);
+				}
+				else{
+					periodeTime *= 1000;
+					PrintFreq((uint32_t)periodeTime, 1);
+				}
+			}
+		}
+}
+static void PrintFreq(uint32_t freq, uint8_t dpIndex){
 	if(freq > 9999)
 		freq = 9999; // limit max freq - 4x7seg display
+
+	// SEG1
 	uint8_t thouse = freq / 1000;
-	HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[8], GPIO_PIN_RESET); // reset all segment
-	HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[thouse], GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOB, sevenSegMask, GPIO_PIN_RESET); // reset segment
+	dpIndex == 1 ? HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[thouse] | DP_PRINT, GPIO_PIN_SET) : HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[thouse], GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOA, LE_1, GPIO_PIN_RESET);
-	HAL_Delay(500);
+	HAL_Delay(2);
 	HAL_GPIO_WritePin(GPIOA, LE_1, GPIO_PIN_SET);
 	freq -= thouse * 1000;
+	// SEG2
 	uint8_t hundr = freq / 100;
-	HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[8], GPIO_PIN_RESET); // reset all segment
-	HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[hundr], GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOB, sevenSegMask, GPIO_PIN_RESET); // reset segment
+	dpIndex == 2 ? HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[hundr] | DP_PRINT, GPIO_PIN_SET) : HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[hundr], GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOB, LE_2, GPIO_PIN_RESET);
-	HAL_Delay(500);
+	HAL_Delay(2);
 	HAL_GPIO_WritePin(GPIOB, LE_2, GPIO_PIN_SET);
 	freq -= hundr * 100;
+	// SEG3
 	uint8_t ten = freq / 10;
-	HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[8], GPIO_PIN_RESET); // reset all segment
-	HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[ten], GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOB, sevenSegMask, GPIO_PIN_RESET); // reset segment
+	dpIndex == 3 ? HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[ten] | DP_PRINT, GPIO_PIN_SET) : HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[ten], GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOB, LE_3, GPIO_PIN_RESET);
-	HAL_Delay(500);
+	HAL_Delay(2);
 	HAL_GPIO_WritePin(GPIOB, LE_3, GPIO_PIN_SET);
 	freq -= ten * 10;
-	HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[8], GPIO_PIN_RESET); // reset all segment
+	// SEG4
+	HAL_GPIO_WritePin(GPIOB, sevenSegMask, GPIO_PIN_RESET); // reset segment
 	HAL_GPIO_WritePin(GPIOB, sevenSegNumbers[freq], GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOB, LE_4, GPIO_PIN_RESET);
-	HAL_Delay(500);
+	HAL_Delay(2);
 	HAL_GPIO_WritePin(GPIOB, LE_4, GPIO_PIN_SET);
 }
+
 /* USER CODE END 4 */
 
 /**

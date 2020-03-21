@@ -53,6 +53,7 @@ extern "C" {
 #define LE_2 GPIO_PIN_7
 #define LE_3 GPIO_PIN_0
 #define LE_4 GPIO_PIN_5
+#define DP_PRINT GPIO_PIN_13
 
 #define COUNTER_TIMER_FREQ 84000000 // 84Mhz
 /* USER CODE END EM */
@@ -67,6 +68,7 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
+#define B1_EXTI_IRQn EXTI15_10_IRQn
 #define signal_Pin GPIO_PIN_0
 #define signal_GPIO_Port GPIOA
 #define signal_EXTI_IRQn EXTI0_IRQn
@@ -98,6 +100,9 @@ void Error_Handler(void);
 #define TCK_GPIO_Port GPIOA
 #define LE_1_Pin GPIO_PIN_15
 #define LE_1_GPIO_Port GPIOA
+#define button_Pin GPIO_PIN_10
+#define button_GPIO_Port GPIOC
+#define button_EXTI_IRQn EXTI15_10_IRQn
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 #define seg_G_Pin GPIO_PIN_4
