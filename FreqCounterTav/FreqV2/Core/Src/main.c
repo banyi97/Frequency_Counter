@@ -35,7 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define Ts 1/10000
+#define Ts 1/20000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -93,7 +93,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 				uint16_t f = 0;
 				f |= rxBuffer[1];
 				f |= rxBuffer[2] << 8;
+				if(f > 9999){
+					f = 9999;
+				}
 				freq = f;
+				tim.Instance->CNT = 0;
+				fallCntr = 0;
 			}
 		}
 		HAL_UART_Receive_IT(&huart2, (p+count), 1);
@@ -142,12 +147,10 @@ int main(void)
 
   while (1)
   {
-
 	sendFreq = calcFreq; // local copy
 	if(sendFreq > 9999){
 		sendFreq = 9999;
 	}
-
 	// SEG 1
 	uint8_t thouse = sendFreq / 1000;
 	txBuff[0] = START_FRAME;
@@ -171,7 +174,6 @@ int main(void)
 	txBuff[1] = sendFreq | 0x10;
 	txBuff[2] = gencrc(tx, 2);
 	HAL_UART_Transmit(&huart2, tx, 3, 1000);
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -340,12 +342,12 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 static void DAC_Tim(){
-	__TIM2_CLK_ENABLE(); //84Mhz - 10kHz 7,0x20C
+	__TIM2_CLK_ENABLE(); //84Mhz - 10kHz 7,0x419 - 20kHz 0,0x1067
 	dac_tim.Instance = TIM2;
 	dac_tim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	dac_tim.Init.CounterMode = TIM_COUNTERMODE_UP;
-	dac_tim.Init.Prescaler = 7; // 7 + 1
-	dac_tim.Init.Period = 0x419; // 524 + 1
+	dac_tim.Init.Prescaler = 0; // 0 + 1
+	dac_tim.Init.Period = 0x1067; // 4199 + 1
 	dac_tim.State = HAL_TIM_STATE_RESET;
 
 	HAL_TIM_Base_Init(&dac_tim);

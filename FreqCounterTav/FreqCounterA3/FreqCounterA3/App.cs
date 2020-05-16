@@ -38,6 +38,7 @@ namespace FreqCounterA3
             try
             {
                 this.serialPort = new SerialPort(port, 115200, Parity.None, 8, StopBits.One);
+                this.segs = new char[4] { ' ', ' ', ' ', ' ' };
                 this.serialPort.Open();
                 serialPort.DataReceived += SerialPort_DataReceived;
                 return true;
@@ -112,7 +113,7 @@ namespace FreqCounterA3
                 }
                 return bilder.ToString();
             }
-            return "";
+            return String.Empty;
         }
 
         private byte Gencrc(IEnumerable<byte> data)

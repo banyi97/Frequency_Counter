@@ -1,0 +1,10 @@
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\bin\Debug\FreqCounterA3.exe.config
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\bin\Debug\FreqCounterA3.exe
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\bin\Debug\FreqCounterA3.pdb
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\obj\Debug\FreqCounterA2.csprojAssemblyReference.cache
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\obj\Debug\FreqCounterA3.Form1.resources
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\obj\Debug\FreqCounterA3.Properties.Resources.resources
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\obj\Debug\FreqCounterA2.csproj.GenerateResource.cache
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\obj\Debug\FreqCounterA2.csproj.CoreCompileInputs.cache
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\obj\Debug\FreqCounterA3.exe
+C:\Users\User\source\repos\HF\FreqCounterA3\FreqCounterA3\obj\Debug\FreqCounterA3.pdb
